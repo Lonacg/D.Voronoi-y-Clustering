@@ -19,8 +19,9 @@ import matplotlib.pyplot as plt
 
 # #############################################################################
 # Aquí tenemos definido el sistema X de 1500 elementos (personas) con dos estados
-archivo1 = "C:/Users/rober/Downloads/Personas_de_villa_laminera.txt"
-archivo2 = "C:/Users/rober/Downloads/Franjas_de_edad.txt"
+archivo1 = r"C:\Users\Usuario\Documents\0-MIS DOCUMENTOS\0-Universidad\5-2023-2024\Segundo_cuatri\Gcom\Practicas\Practica_2-D.Voronoi-y-Clustering/Personas_de_villa_laminera.txt"
+archivo2 = r"C:\Users\Usuario\Documents\0-MIS DOCUMENTOS\0-Universidad\5-2023-2024\Segundo_cuatri\Gcom\Practicas\Practica_2-D.Voronoi-y-Clustering/Franjas_de_edad.txt"
+
 X = np.loadtxt(archivo1,skiprows=1)
 Y = np.loadtxt(archivo2,skiprows=1)
 labels_true = Y[:,0]
