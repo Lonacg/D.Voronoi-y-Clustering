@@ -13,13 +13,7 @@ import matplotlib.pyplot as plt
 from scipy.spatial import Voronoi, voronoi_plot_2d
 from sklearn.cluster import DBSCAN
 
-
-archivo1 = r"C:\Users\Usuario\Documents\0-MIS DOCUMENTOS\0-Universidad\5-2023-2024\Segundo_cuatri\Gcom\Practicas\Practica_2-D.Voronoi-y-Clustering\Personas_de_villa_laminera.txt"
-archivo2 = r"C:\Users\Usuario\Documents\0-MIS DOCUMENTOS\0-Universidad\5-2023-2024\Segundo_cuatri\Gcom\Practicas\Practica_2-D.Voronoi-y-Clustering\Franjas_de_edad.txt"
-
-X = np.loadtxt(archivo1,skiprows=1)
-Y = np.loadtxt(archivo2,skiprows=1)
-
+import math
 
 
 '''
@@ -35,7 +29,7 @@ APARTADO i)
 algoritmo KMeans. 
 - Muestra en una gráfica el valor de s en función de k y decide con ello cuál
 es el número óptimo de vecindades. 
-- En una segunda gráfica, muestra la clasificación (clusters) resulante con diferentes 
+- En una segunda gráfica, muestra la clasificación (clusters) resultante con diferentes 
 colores y representa el diagrama de Voronoi en esa misma gráfica.
 '''
 
@@ -62,17 +56,18 @@ def silhouette_coeff(X):
 
 def show_optimal_Voronoi_cells(coef_s):
     """
-    Grafica los coeficientes de Silhouette en funcion del numero (k = 2, ..., 15) vecindades y devuelve el numero optimo de vecindades de Voronoi.
+    Representa los coeficientes de Silhouette en funcion del numero (k = 2, ..., 15) vecindades y devuelve el numero optimo de vecindades de Voronoi.
     
     Returns a int object (optimal number of Voronoi cells)
 
     Arguments:
-        coef_s -> list object
+        coef_s -> list object (Silhouette values)
 
     """
     plt.xlabel("Number of Voronoi cell")      
     plt.ylabel("Silhouette value")
     plt.plot(list(range(2,16)), coef_s)      # Representamos graficamente los coeficientes obtenidos para cada k
+    #plt.title('Figura 1')
     plt.show()
 
     index = coef_s.index(max(coef_s))        # Posicion del coeficiente de Silhouette mayor en la lista
@@ -80,7 +75,14 @@ def show_optimal_Voronoi_cells(coef_s):
     return index + 2                         # Empezamos en k = 2 asi que ajustamos el indice
 
 
-def clusters_and_VoronoiD(k):
+def clusters_and_Voronoi_Kmeans(X, k):
+    """
+    Representa graficamente la clasificación (clusters) resultante junto con el diagrama de Voronoi.
+
+    Arguments:
+        k -> int object (number of clusters)
+
+    """
     kmeans = KMeans(n_clusters= k, random_state= 0).fit(X)
     labels = kmeans.labels_
 
@@ -89,7 +91,8 @@ def clusters_and_VoronoiD(k):
 
     plt.figure(figsize=(8,4))
 
-    vor=Voronoi(kmeans.cluster_centers_)
+    pivot = kmeans.cluster_centers_
+    vor=Voronoi(pivot)
     voronoi_plot_2d(vor)
 
     for i, col in zip(unique_labels, colors):
@@ -102,45 +105,169 @@ def clusters_and_VoronoiD(k):
         plt.plot(xy[ : , 0], xy[ : , 1], 'o', markerfacecolor= tuple(col), markeredgecolor= 'k', markersize= 5)
 
 
+    plt.xlim(-3.75,4)
+    plt.ylim(-4,4)
+
     plt.title('Fixed number of KMeans clusters: %d' % k)
+    #plt.title('Figura 2')
+
+    for i in range(len(pivot)):
+        plt.plot(pivot[i][0], pivot[i][1], 'o', markersize= 12, markerfacecolor= 'red')
     plt.show()
 
 
-## PENDIENTE AJUSTAR MARGENES DE LA IMAGEN PARA QUE SE VEA ENETRA
 
 '''
-ii) Obtén el coeficiente s para el mismo sistema A usando ahora el algoritmo DBSCAN con la
+APARTADO ii) 
+Obtén el coeficiente s para el mismo sistema A usando ahora el algoritmo DBSCAN con la
 métrica ‘euclidean’ y luego con ‘manhattan’. En este caso, el parámetro que debemos explorar
 es el umbral de distancia ϵ ∈ (0.1, 0.4), fijando el número de elementos mínimo en n0 = 10.
 Comparad gráficamente con el resultado del apartado anterior.
 '''
 
+
+def dbscan_metric(X, metric_type, epsilon, n_min ):
+    """
+    Obtiene los coef. de Silhouette con el algoritmo DBSCAN 
+    para una metrica concreta dada.
+
+    Returns
+        list object (epsilon distances)
+        list object (Silhouette values)
+
+    Arguments:
+        metric_type -> string object ('euclidean' / 'manhattan')
+        epsilon     -> list object (epsilon range)
+        n_min       -> int object (minimum number of elements)
+
+    """
+    distances = []
+    coef_s = []
+    clusters = [] # Numeros de cluster para cada coef de silouette
+    i = 0
+    for e in np.linspace(epsilon[0], epsilon[1], 50 + 2)[1:-1]:
+        distances.append(e)
+
+        db = DBSCAN(eps= distances[i], min_samples= n_min, metric= metric_type).fit(X)
+        core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
+        core_samples_mask[db.core_sample_indices_] = True
+        labels = db.labels_
+
+        coef_s.append(metrics.silhouette_score(X, labels))
+        
+        n_clus = len(set(labels)) - (1 if -1 in labels else 0)
+        clusters.append(n_clus)
+
+        i +=1
+    
+    return [distances, coef_s, clusters]
+
+
+def compare_euc_man(dist, sil_euc, sil_man):
+    """
+    Compara graficamente los coef. de Silhouette obtenidos con el algoritmo DBSCAN 
+    utilizando la metrica ‘euclidean’ y  ‘manhattan’, para un intervalo dado de distancias.
+
+    Arguments:
+        epsilon -> list object (epsilon range)
+        n_min   -> int object (minimum number of elements)
+
+    """
+    plt.plot(dist, sil_euc, 'r', label= 'euclidean')
+    plt.plot(dist, sil_man, label= 'manhattan')
+    plt.legend(loc= 'lower right')
+
+    plt.title('Silhouette values with DBSCAN')
+    plt.xlabel('Epsilon')
+    plt.ylabel('Silhouette value')
+    
+    plt.show() 
+
+
+def compare_sil_clus(sil_kmeans, sil_euc, clusters_euc, sil_man, clusters_man):
+    """
+    Compara graficamente los coef. de Silhouette obtenidos con el algoritmo DBSCAN 
+    con los obtenidos con Kmeans, en funcion del numero clusters
+
+    Arguments:
+        epsilon -> list object (epsilon range)
+        n_min   -> int object (minimum number of elements)
+
+    """
+    plt.plot(list(range(2 ,16)), sil_kmeans, 'g', label = 'Kmeans')
+    plt.plot(clusters_euc, sil_euc, 'r', label = 'DBCAN euclidean')
+    plt.plot(clusters_man, sil_man, label = 'DBCAN manhattan')
+    plt.legend(loc= 'lower right')
+
+    plt.title('Silhouette values with DBSCAN')
+    plt.xlabel('Clusters')
+    plt.ylabel('Silhouette value')
+    
+    plt.show() 
+
+
+
+
+
 '''
-iii) ¿De qué franja de edad diríamos que son las personas con coordenadas a := (1/2, 0) y b :=
+APARTADO iii) 
+¿De qué franja de edad diríamos que son las personas con coordenadas a := (1/2, 0) y b :=
 (0, -3)? Comprueba tu respuesta con la función kmeans.predict.
 '''
+def age_range(X, a, b):
+    """
+    Obtiene la franja de edad de unas coordenadas dadas.
+
+    Returns an array object   
+
+    Arguments:
+        a -> list object 
+        b -> list object 
+
+    """
+    kmeans = KMeans(n_clusters= 3, random_state= 0).fit(X)
+
+    problem = np.array([a, b])
+    clases_pred = kmeans.predict(problem)
+
+    return clases_pred
 
 
-def main():
-    archivo1 = r"C:\Users\Usuario\Documents\0-MIS DOCUMENTOS\0-Universidad\5-2023-2024\Segundo_cuatri\Gcom\Practicas\Practica_2-D.Voronoi-y-Clustering\Personas_de_villa_laminera.txt"
-    archivo2 = r"C:\Users\Usuario\Documents\0-MIS DOCUMENTOS\0-Universidad\5-2023-2024\Segundo_cuatri\Gcom\Practicas\Practica_2-D.Voronoi-y-Clustering\Franjas_de_edad.txt"
-
-    X = np.loadtxt(archivo1,skiprows=1)
-    Y = np.loadtxt(archivo2,skiprows=1)
-
-    # Apartado I
-    print("APARTADO I")
-    coef_s = silhouette_coeff(X)
-    better_k = show_optimal_Voronoi_cells(coef_s)
-
-    print(f"El numero optimo de vecindades de Voronoi es aquel en el que el coeficiente de Silhouette es mayor, por tanto, segun la gráfica obtenida, debemos tomar {better_k} vecindades.\n")
-
-    clusters_and_VoronoiD(better_k)
 
 
 
 
+#def main():
+archivo1 = r"C:\Users\Usuario\Documents\0-MIS DOCUMENTOS\0-Universidad\5-2023-2024\Segundo_cuatri\Gcom\Practicas\Practica_2-D.Voronoi-y-Clustering\Personas_de_villa_laminera.txt"
+archivo2 = r"C:\Users\Usuario\Documents\0-MIS DOCUMENTOS\0-Universidad\5-2023-2024\Segundo_cuatri\Gcom\Practicas\Practica_2-D.Voronoi-y-Clustering\Franjas_de_edad.txt"
+
+X = np.loadtxt(archivo1,skiprows=1)
+Y = np.loadtxt(archivo2,skiprows=1)
+
+# Apartado I
+print("APARTADO I")
+sil_kmeans = silhouette_coeff(X)
+better_k = show_optimal_Voronoi_cells(sil_kmeans)
+
+print(f"El numero optimo de vecindades de Voronoi es aquel en el que el coeficiente de Silhouette es mayor, por tanto, segun la gráfica obtenida, debemos tomar {better_k} vecindades.\n")
+
+clusters_and_Voronoi_Kmeans(X, better_k)
+
+# Apartado II
+print("APARTADO II")
+[dist, sil_euc, clusters_euc] = dbscan_metric(X, 'euclidean', [0.1, 0.4], 10) # Las distancias son iguales para ambas metricas
+[dist, sil_man, clusters_man] = dbscan_metric(X, 'manhattan', [0.1, 0.4], 10)
+
+compare_euc_man(dist, sil_euc, sil_man)
+
+compare_sil_clus(sil_kmeans, sil_euc, clusters_euc, sil_man, clusters_man)
+
+# Apartado III
+print("APARTADO III")
+
+'''
 if __name__ == '__main__':
     main()
 
+'''
 
