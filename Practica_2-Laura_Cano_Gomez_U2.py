@@ -57,7 +57,7 @@ def silhouette_coeff(X):
     return [coef_s, index +2]                                   # Empezamos en k = 2 asi que ajustamos el indice
 
 
-def show_optimal_Voronoi_cells(coef_s):
+def show_Voronoi_cells(coef_s):
     """
     Representa los coeficientes de Silhouette en funcion del numero (k = 2, ..., 15) vecindades.
     
@@ -192,7 +192,7 @@ def compare_euc_man(dist, sil_euc, sil_man):
     plt.plot(dist, sil_man, label= 'manhattan')
     plt.legend(loc= 'lower right')
 
-    plt.title('Comparative DBSCAN Euclidean/ DBSCAN Manhattan')
+    plt.title('Comparative DBSCAN Euclidean vs. DBSCAN Manhattan')
     plt.xlabel('Epsilon')
     plt.ylabel('Silhouette value')
     
@@ -203,7 +203,7 @@ def compare_euc_man(dist, sil_euc, sil_man):
 def compare_sil_clus(sil_kmeans, sil_euc, clusters_euc, sil_man, clusters_man):
     """
     Compara graficamente los coef. de Silhouette obtenidos con el algoritmo DBSCAN 
-    con los obtenidos con Kmeans, en funcion del numero clusters
+    con los obtenidos con Kmeans, en funcion del numero de clusters
 
     Arguments:
         epsilon -> list object (epsilon range)
@@ -215,7 +215,7 @@ def compare_sil_clus(sil_kmeans, sil_euc, clusters_euc, sil_man, clusters_man):
     plt.plot(clusters_man, sil_man, 'bx', label = 'DBSCAN manhattan')
     plt.legend(loc= 'upper right')
 
-    plt.title('Comparative Kmeans - DBSCAN')
+    plt.title('Comparative K-means vs. DBSCAN')
     plt.xlabel('Clusters')
     plt.ylabel('Silhouette value')
     
@@ -228,28 +228,11 @@ APARTADO iii)
 ¿De qué franja de edad diríamos que son las personas con coordenadas a := (1/2, 0) y b :=
 (0, -3)? Comprueba tu respuesta con la función kmeans.predict.
 '''
-def age_with_predict(X, a, b):
-    """
-    Obtiene la franja de edad de unas coordenadas dadas.
-
-    Returns an array object   
-
-    Arguments:
-        a -> list object 
-        b -> list object 
-
-    """
-    kmeans = KMeans(n_clusters= 3, random_state= 0).fit(X)
-
-    problem = np.array([a, b])
-    clases_pred = kmeans.predict(problem)
-
-    return clases_pred
 
 
 def distance_to_centroid(X, n_clus, pto):
     """
-    Dado un punto, devuelve a que centroide corresponde, es decil, aquel con el que tieneuna distancia menor
+    Dado un punto, devuelve a que centroide corresponde, es decir, aquel con el que tiene una distancia menor
 
     Returns an int object   
 
@@ -270,7 +253,23 @@ def distance_to_centroid(X, n_clus, pto):
     return distances.index(min(distances))
 
 
+def age_with_predict(X, a, b):
+    """
+    Obtiene la franja de edad (el cluster) al que pertenece un pto dado utilizando la funcion kmeans.predict.
 
+    Returns an array object   
+
+    Arguments:
+        a -> list object 
+        b -> list object 
+
+    """
+    kmeans = KMeans(n_clusters= 3, random_state= 0).fit(X)
+
+    problem = np.array([a, b])
+    clases_pred = kmeans.predict(problem)
+
+    return clases_pred
 
 
 
@@ -287,7 +286,9 @@ def main():
 
 
     [sil_kmeans, better_k] = silhouette_coeff(X)
-    show_optimal_Voronoi_cells(sil_kmeans)
+    show_Voronoi_cells(sil_kmeans)
+
+    print(f"S es: {sil_kmeans}")
 
     print(f"El numero optimo de vecindades de Voronoi es aquel en el que el coeficiente de Silhouette es mayor, por tanto, segun la gráfica obtenida, debemos tomar {better_k} vecindades.\n")
 
