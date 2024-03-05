@@ -16,16 +16,16 @@ from sklearn.cluster import DBSCAN
 
 
 '''
-Determina el número ideal de franjas de Villa Laminera (sistema A) a partir del número óptimo 
-de clusters o vecindades de Voronói. Para ello, utiliza el coeficiente de Silhouette (s), que puede
-emplearse directamente desde la librería sklearn:
+Determina el número ideal de franjas de Villa Laminera (sistema A) a partir del 
+número óptimo de clusters o vecindades de Voronói. Para ello, utiliza el coeficiente 
+de Silhouette (s), que puede emplearse directamente desde la librería sklearn:
 '''
 
 
 '''
 APARTADO i) 
-- Obtén el coeficiente s de A para diferente número de vecindades k ∈ {2, 3, ..., 15} usando el
-algoritmo KMeans. 
+- Obtén el coeficiente s de A para diferente número de vecindades k ∈ {2, 3, ..., 15} 
+usando el algoritmo KMeans. 
 - Muestra en una gráfica el valor de s en función de k y decide con ello cuál
 es el número óptimo de vecindades. 
 - En una segunda gráfica, muestra la clasificación (clusters) resultante con diferentes 
@@ -33,23 +33,25 @@ colores y representa el diagrama de Voronoi en esa misma gráfica.
 '''
 
 
-def silhouette_coeff(X):
+def silhouette_coeff(X, clus_range):
     """
-    Determina el coeficiente de Sihouette para k = 2, ..., 15 vecindades, y devuelve el numero optimo de vecindades de Voronoi.
+    Determina el coeficiente de Sihouette para k = 2, ..., 15 vecindades, y devuelve 
+    el numero optimo de vecindades de Voronoi.
     
     Returns a list object 
-        list object (silhouette coefficients for k = 2, ..., 15)
+        list object (silhouette coefficients for k = [clus_range])
         int object
 
     Arguments:
-        X -> ndarray object
+        X          -> ndarray object
+        clus_range -> list object 
 
     """
     coef_s = []
-    for k in range(2,16):
+    for k in range(clus_range[0], clus_range[1] + 1):
         kmeans = KMeans(n_clusters= k, random_state= 0).fit(X)  # Inicializamos k aleatoriamente
         labels = kmeans.labels_
-        silhouette = metrics.silhouette_score(X, labels)        # Obtiene el coef. de Silhouette usando KMeans
+        silhouette = metrics.silhouette_score(X, labels)        # Obtiene el coef. de Silhouette
         coef_s.append(silhouette)                               # Añade el coef. a la lista
 
     index = coef_s.index(max(coef_s))                           # Posicion del coeficiente de Silhouette mayor en la lista
@@ -57,7 +59,7 @@ def silhouette_coeff(X):
     return [coef_s, index +2]                                   # Empezamos en k = 2 asi que ajustamos el indice
 
 
-def show_Voronoi_cells(coef_s):
+def show_Voronoi_cells(coef_s, clus_range):
     """
     Representa los coeficientes de Silhouette en funcion del numero (k = 2, ..., 15) vecindades.
     
@@ -67,7 +69,7 @@ def show_Voronoi_cells(coef_s):
     """
     plt.xlabel("Number of Voronoi cell")      
     plt.ylabel("Silhouette value")
-    plt.plot(list(range(2,16)), coef_s)         # Representamos graficamente los coeficientes obtenidos para cada k
+    plt.plot(list(range(clus_range[0], clus_range[1] + 1)), coef_s)         # Representamos graficamente los coeficientes obtenidos para cada k
 
     plt.show()
 
@@ -76,7 +78,8 @@ def show_Voronoi_cells(coef_s):
 
 def clusters_and_Voronoi_Kmeans(X, k, pto1= None, pto2= None):
     """
-    Representa graficamente la clasificación (clusters) resultante junto con el diagrama de Voronoi.
+    Representa graficamente la clasificación (clusters) resultante junto con el diagrama 
+    de Voronoi.
 
     Arguments:
         k -> int object (number of clusters)
@@ -117,16 +120,16 @@ def clusters_and_Voronoi_Kmeans(X, k, pto1= None, pto2= None):
     if pto1 is not None:
         x = pto1[0]
         y = pto1[1]
-        plt.plot(x, y, marker= 'o', markersize = 7, color='magenta')
+        plt.plot(x, y, marker= 'o', markersize = 7, color='magenta', label= "Punto a")
         plt.text(x, y, f'({x}, {y})', verticalalignment='top', horizontalalignment='left', color = 'magenta')
-
+        
     if pto2 is not None:
         x = pto2[0]
         y = pto2[1]
-        plt.plot(x, y, marker= 'o', markersize = 7, color='green')
+        plt.plot(x, y, marker= 'o', markersize = 7, color='green', label= "Punto b")
         plt.text(x, y, f'({x}, {y})', verticalalignment='top', horizontalalignment='left', color = 'green')
 
-
+    plt.legend(loc= 'lower right')
     plt.show()
 
 
@@ -200,7 +203,7 @@ def compare_euc_man(dist, sil_euc, sil_man):
 
 
 
-def compare_sil_clus(sil_kmeans, sil_euc, clusters_euc, sil_man, clusters_man):
+def compare_sil_clus(clus_range, sil_kmeans, sil_euc, clusters_euc, sil_man, clusters_man):
     """
     Compara graficamente los coef. de Silhouette obtenidos con el algoritmo DBSCAN 
     con los obtenidos con Kmeans, en funcion del numero de clusters
@@ -210,7 +213,7 @@ def compare_sil_clus(sil_kmeans, sil_euc, clusters_euc, sil_man, clusters_man):
         n_min   -> int object (minimum number of elements)
 
     """
-    plt.plot(list(range(2 ,16)), sil_kmeans, 'gx', label = 'Kmeans')
+    plt.plot(list(range(clus_range[0], clus_range[1] + 1)), sil_kmeans, 'gx', label = 'Kmeans')
     plt.plot(clusters_euc, sil_euc, 'rx', label = 'DBSCAN euclidean')
     plt.plot(clusters_man, sil_man, 'bx', label = 'DBSCAN manhattan')
     plt.legend(loc= 'upper right')
@@ -232,7 +235,8 @@ APARTADO iii)
 
 def distance_to_centroid(X, n_clus, pto):
     """
-    Dado un punto, devuelve a que centroide corresponde, es decir, aquel con el que tiene una distancia menor
+    Dado un punto, devuelve a que centroide corresponde, es decir, aquel con el que tiene 
+    una distancia menor.
 
     Returns an int object   
 
@@ -255,7 +259,8 @@ def distance_to_centroid(X, n_clus, pto):
 
 def age_with_predict(X, a, b):
     """
-    Obtiene la franja de edad (el cluster) al que pertenece un pto dado utilizando la funcion kmeans.predict.
+    Obtiene la franja de edad (el cluster) al que pertenece un pto dado utilizando 
+    la funcion kmeans.predict.
 
     Returns an array object   
 
@@ -283,10 +288,10 @@ def main():
     # Apartado I
     print("APARTADO I")
     print("- Obtén el coeficiente s de A para diferente número de vecindades k ∈ {2, 3, ..., 15} usando el algoritmo KMeans. \n- Muestra en una gráfica el valor de s en función de k y decide con ello cuáles el número óptimo de vecindades. \n- En una segunda gráfica, muestra la clasificación (clusters) resultante con diferentes colores y representa el diagrama de Voronoi en esa misma gráfica.")
-
-
-    [sil_kmeans, better_k] = silhouette_coeff(X)
-    show_Voronoi_cells(sil_kmeans)
+    
+    clus_range = [2, 15]
+    [sil_kmeans, better_k] = silhouette_coeff(X, clus_range)
+    show_Voronoi_cells(sil_kmeans, clus_range)
 
     print(f"S es: {sil_kmeans}")
 
@@ -304,8 +309,9 @@ def main():
 
     compare_euc_man(dist, sil_euc, sil_man)
 
-
-    compare_sil_clus(sil_kmeans, sil_euc, clusters_euc, sil_man, clusters_man)
+    clus_range = [2, 22]  # Visualizamos la comparacion para k = 2, ... , 22 clusters
+    [sil_kmeans, better_k] = silhouette_coeff(X, clus_range)
+    compare_sil_clus(clus_range, sil_kmeans, sil_euc, clusters_euc, sil_man, clusters_man)
 
     # Apartado III
     print("APARTADO III")
@@ -323,9 +329,6 @@ def main():
 
     print("Representacion grafica:")
     clusters_and_Voronoi_Kmeans(X, better_k, pto1, pto2)
-
-
-
 
     print(f"\nComprobamos el resultado con kmeans.predict:")
     cluster_predict = age_with_predict(X, pto1, pto2)
